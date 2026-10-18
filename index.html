@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ローリング・アイス地獄</title>
+<style>
+:root{--pink:#ff78ae;--purple:#8b5cf6;--ink:#30263a;--cream:#fff9f1}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;color:var(--ink);background:linear-gradient(160deg,#fff0f7,#e9f8ff 55%,#fff7df);min-height:100vh}
+main{width:min(920px,100%);margin:auto;padding:16px}
+header{text-align:center;padding:8px 0 12px}
+h1{font-size:clamp(1.65rem,5vw,2.7rem);margin:4px 0;color:#6c3ca5;letter-spacing:.03em}
+.subtitle{margin:0;color:#755c7d;font-size:.95rem}
+.panel{background:#ffffffd9;border:2px solid #ffffff;border-radius:22px;padding:14px;box-shadow:0 8px 24px #7853a51a;margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#fff3fa;border-radius:14px;text-align:center;padding:9px 4px}
+.stat span{display:block;font-size:.78rem;color:#856c8c}
+.stat strong{font-size:1.25rem}
+#stage{position:relative;background:#f6f7fa;border-radius:18px;padding:12px;overflow:hidden}
+#plate{height:clamp(230px,52vw,360px);max-height:360px;position:relative;overflow:hidden;border-radius:16px;background:linear-gradient(135deg,#d8e0e7,#f9fbfd 45%,#cbd5df);border:5px solid #a9b7c5;box-shadow:inset 0 0 18px #5c718044;touch-action:none;user-select:none}
+#plate:before{content:"";position:absolute;inset:10px;border:1px dashed #8294a6;border-radius:10px;pointer-events:none}
+#ice{position:absolute;inset:0;background:transparent;transition:background .25s}
+#hint{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px;font-weight:700;color:#6f7480;pointer-events:none}
+#trail{position:absolute;inset:0;pointer-events:none}
+.swipe-line{position:absolute;height:8px;border-radius:99px;background:#fff8;box-shadow:0 0 8px #fff}
+.roll{position:absolute;width:15%;height:66%;min-width:22px;max-width:44px;border-radius:45% 45% 35% 35%;border:2px solid #ffffffa8;box-shadow:inset -5px 0 0 #00000012,0 3px 5px #0002;background:linear-gradient(90deg,#ff9ec8,#ffe0ee 35%,#f889b8 70%,#ffd1e4);animation:pop .25s ease-out}
+@keyframes pop{from{transform:scale(.2) rotate(-25deg)}to{transform:scale(1) rotate(0)}}
+.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button{font:inherit;font-weight:750;border:0;border-radius:14px;padding:12px 15px;cursor:pointer;touch-action:manipulation;transition:transform .08s,filter .15s}
+button:active{transform:scale(.97)}
+.primary{background:#8b5cf6;color:white;flex:1}
+.secondary{background:#fce4f0;color:#713a61}
+button:disabled{opacity:.45;cursor:not-allowed}
+#message{min-height:3em;text-align:center;font-weight:700;padding:8px 4px 0}
+.toppings{display:flex;gap:8px;flex-wrap:wrap}
+.topping{background:#fff0cf;color:#66451e}
+.topping.selected{outline:3px solid #8b5cf6;background:#f0e9ff}
+#result{display:none;text-align:center;background:#fff0f7;border-radius:16px;padding:14px;margin-top:12px}
+#result h2{margin:0 0 6px}
+footer{text-align:center;color:#8c7b91;font-size:.8rem;padding:12px}
+@media(min-width:650px){.game-layout{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;align-items:start}.game-layout .panel{margin:0}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div style="font-size:2rem">🍨 🥄 💥</div>
+  <h1>ローリング・アイス地獄</h1>
+  <p class="subtitle">目指せ職人。現実はだいたい事故。</p>
+</header>
+<div class="stats panel">
+  <div class="stat"><span>工程</span><strong id="step">1 / 3</strong></div>
+  <div class="stat"><span>スコア</span><strong id="score">0</strong></div>
+  <div class="stat"><span>事故率</span><strong id="chaos">0%</strong></div>
+</div>
+<div class="game-layout">
+<section class="panel">
+  <div id="stage">
+    <div id="plate" aria-label="アイスの鉄板">
+      <div id="ice"></div><div id="trail"></div>
+      <div id="hint">① ここを指やマウスで<br>ぐりぐりスワイプ！</div>
+    </div>
+  </div>
+  <div id="message">まずは鉄板にアイス液を広げよう！</div>
+  <div class="controls">
+    <button class="primary" id="action">アイス液を広げる！</button>
+    <button class="secondary" id="reset">最初から</button>
+  </div>
+  <div id="result"><h2 id="resultTitle">完成！</h2><div id="resultText"></div></div>
+</section>
+<section class="panel">
+  <h3 style="margin:2px 0 10px">🍓 トッピングを選ぼう</h3>
+  <div class="toppings">
+    <button class="topping selected" data-topping="🍓">🍓 いちご</button>
+    <button class="topping" data-topping="🍫">🍫 チョコ</button>
+    <button class="topping" data-topping="🌶️">🌶️ 唐辛子</button>
+    <button class="topping" data-topping="🥦">🥦 ブロッコリー</button>
+    <button class="topping" data-topping="🧄">🧄 にんにく</button>
+  </div>
+  <p style="line-height:1.7;color:#735f7c">遊び方：<br>1. 鉄板をスワイプして液を広げる<br>2. 「凍らせる！」を押す<br>3. 鉄板をスワイプして巻く<br>4. トッピングを選んで完成！</p>
+  <p style="font-size:.9rem;color:#8a718f">ヒント：長くスワイプするほど上手くいく……とは限らない。</p>
+</section>
+</div>
+<footer>スマホは指で、PCはマウスで操作できます。クソゲーは愛。</footer>
+</main>
+<script>
+const plate=document.querySelector('#plate'), ice=document.querySelector('#ice'), trail=document.querySelector('#trail'), hint=document.querySelector('#hint');
+const stepEl=document.querySelector('#step'), scoreEl=document.querySelector('#score'), chaosEl=document.querySelector('#chaos'), message=document.querySelector('#message'), action=document.querySelector('#action'), result=document.querySelector('#result');
+let step=1, score=0, chaos=0, swipes=0, drawing=false, start=null, selected='🍓', rolled=0, toppings=[];
+const colors=['#ff8fbd','#d9c0ff','#a7e8df','#ffe29b','#ffb5a6'];
+function update(){stepEl.textContent=step+' / 3';scoreEl.textContent=score;chaosEl.textContent=chaos+'%';}
+function say(t){message.textContent=t}
+function reset(){step=1;score=0;chaos=0;swipes=0;rolled=0;toppings=[];ice.style.background='transparent';trail.innerHTML='';hint.style.display='grid';result.style.display='none';action.disabled=false;action.textContent='アイス液を広げる！';plate.style.background='linear-gradient(135deg,#d8e0e7,#f9fbfd 45%,#cbd5df)';document.querySelectorAll('.roll').forEach(x=>x.remove());update();say('まずは鉄板にアイス液を広げよう！')}
+function pos(e){const r=plate.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top,w:r.width,h:r.height}}
+plate.addEventListener('pointerdown',e=>{if(step>3)return;drawing=true;start=pos(e);plate.setPointerCapture(e.pointerId);swipes++;});
+plate.addEventListener('pointerup',e=>{
+ if(!drawing)return;drawing=false;const p=pos(e), dx=p.x-start.x,dy=p.y-start.y,dist=Math.hypot(dx,dy);
+ if(step===1){let coverage=Math.min(1,dist/130);ice.style.background=`radial-gradient(ellipse at ${p.x/p.w*100}% ${p.y/p.h*100}%, ${colors[swipes%colors.length]}dd 0%,${colors[swipes%colors.length]}99 55%,transparent 75%)`;hint.style.display='none';score+=Math.round(8+coverage*14);chaos+=dist<30?12:0;say(dist<30?'そこだけ！？ 液が全然広がってない！':'いい感じ！ もう少し広げてもいいかも。');}
+ else if(step===2){const good=dist>65;let n=good?Math.max(1,Math.min(5,Math.floor(dist/45))):1;for(let i=0;i<n;i++){const roll=document.createElement('div');roll.className='roll';roll.style.left=Math.max(2,Math.min(82,(p.x/p.w*100)-n*3+i*6))+'%';roll.style.top=Math.max(12,Math.min(27,p.y/p.h*100-22+(Math.random()*18-9)))+'%';roll.style.background=`linear-gradient(90deg,${colors[(rolled+i)%colors.length]},#fff 35%,${colors[(rolled+i)%colors.length]})`;plate.appendChild(roll)}rolled+=n;score+=good?12*n:2;chaos+=good?0:15;say(good?'くるくる成功！ 料理人の才能が……ある？':'アイスが粉砕された。これも現代アート。');}
+ });
+plate.addEventListener('pointermove',e=>{if(!drawing||step>2)return;const p=pos(e);if(step===1){const dot=document.createElement('div');dot.className='swipe-line';dot.style.left=(p.x-16)+'px';dot.style.top=(p.y-4)+'px';dot.style.width='32px';dot.style.background=colors[swipes%colors.length]+'cc';trail.appendChild(dot);if(trail.children.length>70)trail.firstChild.remove();}});
+action.addEventListener('click',()=>{
+ if(step===1){if(swipes<1){say('先に鉄板をスワイプして！');return}step=2;ice.style.background='linear-gradient(135deg,#ffe3f0aa,#e8d7ffaa)';hint.style.display='none';action.textContent='完成品を盛り付ける！';say('凍った！ 次はスワイプでアイスを巻こう。');}
+ else if(step===2){if(rolled===0){say('まずは鉄板をスワイプして巻いてみて！');return}step=3;action.textContent='完成度を判定する！';say('盛り付けタイム！ トッピングを選んでね。');}
+ else if(step===3){const weird=toppings.some(t=>['🌶️','🥦','🧄'].includes(t));score+=toppings.length*4;if(weird)chaos+=22;score=Math.max(0,Math.min(100,score));step=4;update();action.disabled=true;result.style.display='block';let title=chaos>35?'🏆 伝説の事故作':score>65?'🍨 一流（たぶん）職人！':'🫠 これは……アイス？';document.querySelector('#resultTitle').textContent=title;document.querySelector('#resultText').innerHTML=`スコア：<b>${score}点</b><br>事故率：<b>${Math.min(100,chaos)}%</b><br>トッピング：${toppings.join(' ')||'なし'}<br><br>${chaos>35?'審査員「これは食べ物ですか？」':score>65?'審査員「見た目はいい。味は知らん。」':'審査員「伸びしろがすごい。」'}`;say('完成！ その勇気だけは満点です。');}
+ update();
+});
+document.querySelectorAll('.topping').forEach(btn=>btn.addEventListener('click',()=>{selected=btn.dataset.topping;if(!toppings.includes(selected))toppings.push(selected);btn.classList.toggle('selected');if(!btn.classList.contains('selected'))toppings=toppings.filter(t=>t!==selected);say(selected+' を盛り付け候補にしたよ！');}));
+document.querySelector('#reset').addEventListener('click',reset);
+update();
+</script>
+</body>
+</html>
